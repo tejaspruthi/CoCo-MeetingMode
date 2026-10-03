@@ -1,0 +1,13 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { data } from '../server/data.js';
+import { basePlan } from '../server/intent.js';
+import { localAnalysis, semanticSQL } from '../server/finance.js';
+mkdirSync('data',{recursive:true});
+const quote=(x:string)=>`'${x.replaceAll("'","''")}'`;
+const values=data.map(r=>`(${[r.month,r.quarter,r.customer_id,r.customer,r.region,r.segment,r.product].map(quote).join(',')},${[r.actual_cents,r.budget_cents,r.cogs_cents,r.budget_cogs_cents].map(c=>(c/100).toFixed(2)).join(',')})`);
+const batches=[];
+for(let i=0;i<values.length;i+=500)batches.push(`INSERT INTO COCO_QBR_DEMO.ANALYTICS.FINANCE_MONTHLY VALUES\n${values.slice(i,i+500).join(',\n')};`);
+writeFileSync('data/load.sql',`-- Generated synthetic data only. Repeatable MERGE-free reset inside a transaction.\nBEGIN;\nDELETE FROM COCO_QBR_DEMO.ANALYTICS.FINANCE_MONTHLY;\n${batches.join('\n')}\nCOMMIT;\n`);
+const examples=[basePlan,{...basePlan,region:'EMEA' as const,segment:'Enterprise' as const,groupBy:'customer' as const},{...basePlan,region:'EMEA' as const,segment:'Enterprise' as const,excludeLargest:true,groupBy:'customer' as const},{...basePlan,metric:'margin' as const,groupBy:'product' as const}];
+writeFileSync('fixtures/expected.json',JSON.stringify(examples.map(plan=>({plan,summary:localAnalysis(plan).summary,sql:semanticSQL(plan,localAnalysis(plan).excludedCustomer)})),null,2)+'\n');
+console.log(`Generated ${data.length} synthetic financial rows and four example fixtures. These are local expectations, not verified Snowflake queries.`);

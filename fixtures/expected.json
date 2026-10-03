@@ -1,0 +1,86 @@
+[
+  {
+    "plan": {
+      "metric": "variance",
+      "region": "ALL",
+      "segment": "ALL",
+      "groupBy": "region",
+      "quarter": "2026-Q3",
+      "excludeLargest": false,
+      "clarification": null
+    },
+    "summary": {
+      "label": "Total",
+      "actual": 8987483.67,
+      "budget": 9336390,
+      "variance": -348906.33,
+      "variance_pct": -3.737058220575619,
+      "gross_profit": 6415315.25,
+      "gross_margin": 71.38054972399188
+    },
+    "sql": "SELECT * FROM SEMANTIC_VIEW(\n  COCO_QBR_DEMO.ANALYTICS.QBR_FINANCE\n  DIMENSIONS finance.region\n  METRICS finance.actual_revenue, finance.budget_revenue, finance.revenue_variance,\n    finance.revenue_variance_pct, finance.gross_profit, finance.gross_margin\n  WHERE finance.quarter = '2026-Q3'\n) ORDER BY actual_revenue DESC, region ASC LIMIT 500"
+  },
+  {
+    "plan": {
+      "metric": "variance",
+      "region": "EMEA",
+      "segment": "Enterprise",
+      "groupBy": "customer",
+      "quarter": "2026-Q3",
+      "excludeLargest": false,
+      "clarification": null
+    },
+    "summary": {
+      "label": "Total",
+      "actual": 2059975.8,
+      "budget": 2482247.4,
+      "variance": -422271.6,
+      "variance_pct": -17.011664510153178,
+      "gross_profit": 1475077.25,
+      "gross_margin": 71.60653295053272
+    },
+    "sql": "SELECT * FROM SEMANTIC_VIEW(\n  COCO_QBR_DEMO.ANALYTICS.QBR_FINANCE\n  DIMENSIONS finance.customer\n  METRICS finance.actual_revenue, finance.budget_revenue, finance.revenue_variance,\n    finance.revenue_variance_pct, finance.gross_profit, finance.gross_margin\n  WHERE finance.quarter = '2026-Q3' AND finance.region = 'EMEA' AND finance.segment = 'Enterprise'\n) ORDER BY actual_revenue DESC, customer ASC LIMIT 500"
+  },
+  {
+    "plan": {
+      "metric": "variance",
+      "region": "EMEA",
+      "segment": "Enterprise",
+      "groupBy": "customer",
+      "quarter": "2026-Q3",
+      "excludeLargest": true,
+      "clarification": null
+    },
+    "summary": {
+      "label": "Total",
+      "actual": 1708130.26,
+      "budget": 1941369.6,
+      "variance": -233239.34,
+      "variance_pct": -12.014164639232014,
+      "gross_profit": 1222093.06,
+      "gross_margin": 71.54565952130606
+    },
+    "sql": "SELECT * FROM SEMANTIC_VIEW(\n  COCO_QBR_DEMO.ANALYTICS.QBR_FINANCE\n  DIMENSIONS finance.customer\n  METRICS finance.actual_revenue, finance.budget_revenue, finance.revenue_variance,\n    finance.revenue_variance_pct, finance.gross_profit, finance.gross_margin\n  WHERE finance.quarter = '2026-Q3' AND finance.region = 'EMEA' AND finance.segment = 'Enterprise' AND finance.customer <> 'Atlas Industries'\n) ORDER BY actual_revenue DESC, customer ASC LIMIT 500"
+  },
+  {
+    "plan": {
+      "metric": "margin",
+      "region": "ALL",
+      "segment": "ALL",
+      "groupBy": "product",
+      "quarter": "2026-Q3",
+      "excludeLargest": false,
+      "clarification": null
+    },
+    "summary": {
+      "label": "Total",
+      "actual": 8987483.67,
+      "budget": 9336390,
+      "variance": -348906.33,
+      "variance_pct": -3.737058220575619,
+      "gross_profit": 6415315.25,
+      "gross_margin": 71.38054972399188
+    },
+    "sql": "SELECT * FROM SEMANTIC_VIEW(\n  COCO_QBR_DEMO.ANALYTICS.QBR_FINANCE\n  DIMENSIONS finance.product\n  METRICS finance.actual_revenue, finance.budget_revenue, finance.revenue_variance,\n    finance.revenue_variance_pct, finance.gross_profit, finance.gross_margin\n  WHERE finance.quarter = '2026-Q3'\n) ORDER BY actual_revenue DESC, product ASC LIMIT 500"
+  }
+]

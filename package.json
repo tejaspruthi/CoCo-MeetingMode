@@ -1,0 +1,41 @@
+{
+  "name": "coco-meeting-analyst",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "node --import tsx server/index.ts",
+    "build": "vite build",
+    "start": "NODE_ENV=production node --import tsx server/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "seed": "node --import tsx scripts/seed.ts",
+    "doctor": "node --import tsx scripts/doctor.ts",
+    "snowflake:setup": "node --import tsx scripts/snowflake-setup.ts"
+  },
+  "dependencies": {
+    "@zoom/rtms": "1.1.0",
+    "cortex-code-agent-sdk": "1.0.7",
+    "dotenv": "18.0.5",
+    "express": "5.2.1",
+    "lucide-react": "1.49.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "snowflake-sdk": "3.4.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/snowflake-sdk": "1.6.24",
+    "@vitejs/plugin-react": "6.1.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  }
+}

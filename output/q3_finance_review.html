@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Q3 2024 Finance Review</title>
+  <style>
+    :root { --ink:#123d35; --muted:#617a73; --line:#d8e2dd; --canvas:#f6f7f4; --accent:#db9e2c; --positive:#168167; --negative:#bb5148; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#e9ece9; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .slide { width:min(100vw, 1280px); aspect-ratio:16/9; min-height:620px; margin:auto; padding:56px 70px 36px; background:var(--canvas); position:relative; overflow:hidden; }
+    .top-line { position:absolute; inset:0 0 auto; height:15px; background:var(--accent); }
+    .eyebrow { margin:0 0 12px; color:var(--muted); font-size:14px; font-weight:750; letter-spacing:.11em; text-transform:uppercase; }
+    h1 { margin:0; font-size:43px; line-height:1.04; letter-spacing:-.04em; }
+    .subhead { margin:13px 0 29px; color:var(--muted); font-size:18px; }
+    .rule { height:1px; background:var(--line); }
+    .metrics { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; margin:92px 0 0; }
+    .metric { padding-right:18px; border-right:1px solid var(--line); }
+    .metric:last-child { border-right:0; }
+    .label { color:var(--muted); font-size:14px; font-weight:700; }
+    .value { margin:6px 0 3px; font-size:42px; line-height:1; font-weight:780; letter-spacing:-.045em; }
+    .detail { color:var(--positive); font-size:16px; font-weight:700; }
+    .metric:first-child .detail { color:var(--muted); }
+    .metric:last-child .detail { color:var(--positive); }
+    .footer { position:absolute; left:70px; right:70px; bottom:19px; display:flex; justify-content:space-between; color:#71867f; font-size:11px; }
+    @media (max-width:760px) { .slide{min-height:100vh;padding:44px 28px 54px;aspect-ratio:auto}.metrics{grid-template-columns:1fr;gap:18px;margin-top:52px}.metric{border-right:0;border-bottom:1px solid var(--line);padding-bottom:16px}.footer{left:28px;right:28px}.value{font-size:36px} }
+  </style>
+</head>
+<body>
+  <main class="slide">
+    <div class="top-line"></div>
+    <p class="eyebrow">Q3 2024 Finance Review</p>
+    <h1>Revenue finished above plan, led by Asia Pacific and Europe</h1>
+    <p class="subhead">DEMO_FINANCE &nbsp;•&nbsp; Q3 actuals versus plan</p>
+    <div class="rule"></div>
+
+    <section class="metrics" aria-label="Q3 financial highlights">
+      <div class="metric"><div class="label">Revenue actual</div><div class="value">$943K</div><div class="detail">Q3 2024 actual</div></div>
+      <div class="metric"><div class="label">Revenue plan</div><div class="value">$930K</div><div class="detail">Q3 2024 target</div></div>
+      <div class="metric"><div class="label">Beat to plan</div><div class="value">+$13K</div><div class="detail">+1.4% versus plan</div></div>
+    </section>
+
+    <footer class="footer"><span>Source: DEMO_FINANCE.PUBLIC.QUARTERLY_FINANCE_SUMMARY</span><span>Demo data</span></footer>
+  </main>
+</body>
+</html>
