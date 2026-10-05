@@ -8,5 +8,7 @@ console.log('Analysis mode:',process.env.ANALYSIS_MODE||'demo');
 console.log('CoCo CLI:',cli.status===0?'available':'MISSING (install from official Snowflake instructions)');
 console.log('Named Snowflake connection file:',existsSync(`${homedir()}/.snowflake/connections.toml`)?'present':'MISSING');
 for(const key of ['CORTEX_CONNECTION','SNOWFLAKE_ACCOUNT','SNOWFLAKE_USER','ZM_RTMS_CLIENT','ZM_RTMS_SECRET','ZOOM_WEBHOOK_SECRET','ZOOM_MEETING_UUID'])console.log(`${key}: ${process.env[key]?'configured':'MISSING'}`);
+const webhookUrl=process.env.ZOOM_WEBHOOK_URL;
+console.log(`ZOOM_WEBHOOK_URL: ${webhookUrl?.startsWith('https://')&&webhookUrl.endsWith('/zoom/webhook')?'configured':'MISSING or invalid (must be an HTTPS URL ending in /zoom/webhook)'}`);
 console.log('Live access explicitly verified:',process.env.LIVE_ACCESS_VERIFIED==='true');
 console.log('No credentials were printed. This check does not prove remote access.');

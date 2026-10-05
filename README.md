@@ -34,12 +34,24 @@ npm run dev
 
 Open [http://localhost:4310](http://localhost:4310), then select **Play sample meeting**. The replay runs against synthetic financial data stored locally.
 
+### Connect a live Zoom meeting
+
+The optional live path needs a Zoom General App with RTMS enabled, a public HTTPS callback for the signed webhook, and the Zoom app credentials stored only in your untracked `.env` file. Follow the complete [Zoom RTMS setup guide](docs/zoom-rtms.md), then use:
+
+```sh
+npm run setup -- --zoom
+```
+
+The helper prepares local, non-secret configuration and prints the exact webhook URL to paste into Zoom. It cannot create a Zoom app, grant account access, or deploy a public endpoint on your behalf.
+
 ## Useful commands
 
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Starts the local application. |
 | `npm run seed` | Loads the synthetic demo data. |
+| `npm run setup` | Creates a local `.env` from the safe template. |
+| `npm run setup -- --zoom` | Guides local Zoom webhook and meeting-UUID configuration. |
 | `npm test` | Runs the finance behavior tests. |
 | `npm run typecheck` | Checks the TypeScript code. |
 | `npm run build` | Creates a production web build. |

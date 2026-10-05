@@ -47,6 +47,8 @@ Restart the application. Live mode fails closed: it will never show local synthe
 
 ## 3. Connect Zoom RTMS
 
+For the complete Zoom Marketplace, webhook, endpoint-hosting, and test checklist, follow [Zoom RTMS setup](zoom-rtms.md). The short version below remains useful when you are configuring all live services in one pass.
+
 In Zoom Marketplace, create an RTMS-enabled General app, add the required RTMS transcript scope, and subscribe to the RTMS start and stop webhook events. Developer Pack credits are needed for RTMS. RTMS with transcripts is currently listed as $0.02 per active streaming minute.
 
 The Zoom webhook must reach only this app's `POST /zoom/webhook` route via HTTPS. The UI and all other local APIs must remain on `localhost`. Configure a tunnel or deployment that routes that exact path without exposing the rest of the server.
