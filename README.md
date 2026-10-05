@@ -2,8 +2,6 @@
 
 CoCo is a live meeting companion for financial QBRs. It receives an authorized Zoom RTMS transcript, interprets a question with CoCo, and returns a source-backed answer from a governed Snowflake semantic view—plus evidence and a meeting recap.
 
-This repository intentionally has **no local-answer demo mode**. The app stays in a setup state until Zoom, CoCo, and Snowflake are configured; it never substitutes fictional or local calculations for a live result.
-
 > This is an independent proof of concept, not an official Snowflake product.
 
 ## What it does
