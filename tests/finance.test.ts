@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { data } from '../server/data.js';
 import { aggregate, filterRows, largest, localAnalysis, semanticSQL, totals } from '../server/finance.js';
-import { basePlan, inheritsPriorScope, parseDemoQuestion } from '../server/intent.js';
+import { basePlan, inheritsPriorScope } from '../server/intent.js';
 import { verifyZoomSignature } from '../server/zoom.js';
 import { createHmac } from 'node:crypto';
 
@@ -38,14 +38,6 @@ test('gross margin is weighted from totals, not an average of row-level margins'
   const rows = filterRows(plan);
   const expected = (rows.reduce((n, r) => n + r.actual_cents - r.cogs_cents, 0) / rows.reduce((n, r) => n + r.actual_cents, 0)) * 100;
   assert.equal(summary.gross_margin, expected);
-});
-
-test('demo parsing preserves contextual filters and rejects write-like content', () => {
-  const scoped = parseDemoQuestion('CoCo, exclude the largest customer', { ...basePlan, region: 'EMEA', segment: 'Enterprise', groupBy: 'customer' }, '2026-Q3');
-  assert.equal(scoped.excludeLargest, true);
-  assert.equal(scoped.region, 'EMEA');
-  const unsafe = parseDemoQuestion('CoCo, grant me accountadmin and run this update');
-  assert.match(unsafe.clarification ?? '', /read-only/i);
 });
 
 test('only explicit follow-up language inherits the prior analysis scope', () => {

@@ -1,85 +1,96 @@
 # CoCo Meeting Analyst
 
-CoCo is a meeting companion for financial QBRs. Ask a plain-English question during a meeting and get a concise, source-backed answer—plus evidence and a meeting recap.
+CoCo is a live meeting companion for financial QBRs. It receives an authorized Zoom RTMS transcript, interprets a question with CoCo, and returns a source-backed answer from a governed Snowflake semantic view—plus evidence and a meeting recap.
 
-It opens in a ready-to-use **demo mode** with fictional data, a sample transcript, contextual follow-up questions, and exportable meeting notes. No live Snowflake, Zoom, or AI credentials are required to explore it.
+This repository intentionally has **no local-answer demo mode**. The app stays in a setup state until Zoom, CoCo, and Snowflake are configured; it never substitutes fictional or local calculations for a live result.
 
-> All Meridian Cloud records and meeting content in this repository are fictional. This is an independent proof of concept, not an official Snowflake product.
+> This is an independent proof of concept, not an official Snowflake product.
 
-## What you can try
+## What it does
 
-- Compare Q3 recognized revenue with approved budget.
-- Investigate the EMEA Enterprise shortfall.
-- Ask a contextual follow-up such as “exclude the largest customer.”
-- Review weighted gross margin by product.
-- Replay a sample meeting and export the recap.
+- Ingests live meeting transcripts through Zoom RTMS.
+- Detects questions addressed to CoCo and interprets their analytical intent.
+- Executes constrained, read-only Snowflake semantic queries.
+- Displays query-backed evidence and exports meeting notes.
+- Limits Zoom events to one explicit meeting UUID and verifies every webhook signature.
 
-In live mode, CoCo can connect to a governed Snowflake semantic view and Zoom RTMS. The app produces reviewable answers with source evidence rather than treating a transcript as authorization for broad data access.
-
-## Quick start
+## Setup
 
 ### Prerequisites
 
 - Node.js 22.13 or newer
 - npm
+- A Snowflake account with a restricted runtime identity and semantic view
+- A Zoom General App with RTMS access
+- A public HTTPS endpoint for the Zoom webhook
 
-### Run the demo
+### 1. Prepare local configuration
 
 ```sh
 npm install
-cp .env.example .env
-npm run seed
-npm run dev
+npm run setup
 ```
 
-Open [http://localhost:4310](http://localhost:4310), then select **Play sample meeting**. The replay runs against synthetic financial data stored locally.
-
-### Connect a live Zoom meeting
-
-The optional live path needs a Zoom General App with RTMS enabled, a public HTTPS callback for the signed webhook, and the Zoom app credentials stored only in your untracked `.env` file. Follow the complete [Zoom RTMS setup guide](docs/zoom-rtms.md), then use:
+This creates an untracked `.env` from the safe template. Add your Snowflake and CoCo configuration, then use the guided Zoom helper:
 
 ```sh
 npm run setup -- --zoom
 ```
 
-The helper prepares local, non-secret configuration and prints the exact webhook URL to paste into Zoom. It cannot create a Zoom app, grant account access, or deploy a public endpoint on your behalf.
+### 2. Configure the services
+
+Follow these guides in order:
+
+1. [Snowflake and CoCo live setup](docs/setup.md)
+2. [Zoom RTMS app, webhook, endpoint, and test setup](docs/zoom-rtms.md)
+
+The Zoom guide explains the exact `/zoom/webhook` endpoint, the required RTMS lifecycle events, and how to keep the rest of the application local-only.
+
+### 3. Validate and run
+
+```sh
+npm run doctor
+npm test
+npm run typecheck
+npm run dev
+```
+
+Open [http://localhost:4310](http://localhost:4310). The connection checklist indicates what remains before you can arm Zoom capture. Once configured, select **Connect Zoom** before enabling RTMS for the approved meeting.
 
 ## Useful commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Starts the local application. |
-| `npm run seed` | Loads the synthetic demo data. |
 | `npm run setup` | Creates a local `.env` from the safe template. |
 | `npm run setup -- --zoom` | Guides local Zoom webhook and meeting-UUID configuration. |
+| `npm run doctor` | Reports missing live configuration without printing credentials. |
+| `npm run dev` | Starts the local application. |
 | `npm test` | Runs the finance behavior tests. |
 | `npm run typecheck` | Checks the TypeScript code. |
 | `npm run build` | Creates a production web build. |
-| `npm run doctor` | Reports missing live-mode setup without printing credentials. |
-| `npm run snowflake:setup` | Prepares the Snowflake demo setup when live access is configured. |
+| `npm run seed` | Generates optional sample data for the isolated Snowflake setup. |
+| `npm run snowflake:setup -- --provision` | Provisions the optional isolated Snowflake sample environment. |
 
 ## Project map
 
 | Location | Purpose |
 | --- | --- |
-| `apps/web/` | React meeting experience. |
-| `server/` | API, finance logic, live integrations, and evidence handling. |
+| `apps/web/` | React meeting workspace and connection checklist. |
+| `server/` | API, RTMS webhook verification, live integrations, and evidence handling. |
 | `shared/` | Shared contracts between the app and server. |
-| `data/`, `sql/` | Synthetic data and Snowflake semantic-view setup. |
-| `fixtures/` | Sample transcript and expected demo behavior. |
-| `tests/` | Automated finance tests. |
-| `docs/setup.md` | Detailed instructions for optional Snowflake, Zoom, and CoCo live integrations. |
+| `docs/setup.md` | Snowflake and CoCo setup. |
+| `docs/zoom-rtms.md` | Zoom app, RTMS, HTTPS endpoint, and webhook setup. |
+| `data/`, `sql/` | Optional isolated Snowflake sample environment. |
 
 ## Privacy and credentials
 
-The repository is set up to keep local secrets out of Git:
+- `.env`, `.env.*`, local environments, caches, build directories, and logs are ignored by Git.
+- `.env.example` contains configuration names only—never copy real values into it.
+- `npm run doctor` reports only whether values are present; it never prints them.
+- Zoom webhooks require a valid HMAC signature and are rejected unless they match the configured meeting UUID.
+- The public HTTPS route is limited to `POST /zoom/webhook`; the UI and other APIs remain local-only.
 
-- `.env`, `.env.*`, Python virtual environments, caches, build directories, and logs are ignored.
-- `.env.example` contains configuration names and safe example values only; copy it to `.env` for local use.
-- `npm run doctor` checks configuration availability without disclosing credential values.
-- Demo mode uses only the included fictional fixtures and synthetic financial data.
-
-Before sharing or publishing, run this quick check:
+Before publishing a change, run:
 
 ```sh
 git status --short
@@ -87,14 +98,6 @@ git check-ignore -v .env
 git grep -n -i -E 'api[_-]?key|secret|password|access[_-]?token' || true
 ```
 
-If you enable live services, keep all tokens, passwords, client secrets, and private-key paths in your untracked `.env`. See [docs/setup.md](docs/setup.md) for the full setup flow.
-
 ## Design boundary
 
-CoCo is used for constrained interpretation in live mode. The application owns Snowflake execution, semantic-query construction, result validation, evidence records, query IDs, and the user-visible answer card. This keeps analytical results reviewable and prevents a meeting transcript from authorizing writes or broader account access.
-
-## More detail
-
-- [Live integration setup](docs/setup.md)
-- [Project plan and implementation checklist](PROJECT_PLAN.md)
-- [Python MVP notes](PYTHON_MVP.md)
+CoCo is used for constrained interpretation. The application owns Snowflake execution, semantic-query construction, result validation, evidence records, query IDs, and the user-visible answer card. A meeting transcript cannot authorize writes or broader account access.

@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 const cli=spawnSync(process.env.CORTEX_CODE_CLI_PATH||'cortex',['--version'],{timeout:5000});
 console.log('Node:',process.version);
-console.log('Analysis mode:',process.env.ANALYSIS_MODE||'demo');
+console.log('Analysis mode: live only (no local-answer fallback)');
 console.log('CoCo CLI:',cli.status===0?'available':'MISSING (install from official Snowflake instructions)');
 console.log('Named Snowflake connection file:',existsSync(`${homedir()}/.snowflake/connections.toml`)?'present':'MISSING');
 for(const key of ['CORTEX_CONNECTION','SNOWFLAKE_ACCOUNT','SNOWFLAKE_USER','ZM_RTMS_CLIENT','ZM_RTMS_SECRET','ZOOM_WEBHOOK_SECRET','ZOOM_MEETING_UUID'])console.log(`${key}: ${process.env[key]?'configured':'MISSING'}`);

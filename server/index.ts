@@ -7,26 +7,19 @@ import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { z } from 'zod';
 import { DATASET_VERSION, type Answer, type Health } from '../shared/contracts.js';
-import { localAnalysis, headline, interpretation } from './finance.js';
-import { parseDemoQuestion, basePlan, inheritsPriorScope } from './intent.js';
+import { headline, interpretation } from './finance.js';
+import { basePlan, inheritsPriorScope } from './intent.js';
 import { interpretLive, liveAnalysis } from './live.js';
 import { createMeeting, loadMeeting, saveMeeting, deleteMeeting, recap } from './store.js';
 import { createZoomAdapter } from './zoom.js';
-import replay from '../fixtures/transcript.json' with {type:'json'};
 const app=express(); const port=Number(process.env.PORT||4310);
-const mode=process.env.ANALYSIS_MODE==='live'?'live':'demo';
 const cliAvailable=spawnSync(process.env.CORTEX_CODE_CLI_PATH||'cortex',['--version'],{timeout:3000}).status===0;
-const health:Health={mode,snowflakeConfigured:!!(process.env.SNOWFLAKE_ACCOUNT&&process.env.SNOWFLAKE_USER),cortexConfigured:!!(cliAvailable&&process.env.CORTEX_CONNECTION),zoomConfigured:!!(process.env.ZM_RTMS_CLIENT&&process.env.ZM_RTMS_SECRET&&process.env.ZOOM_WEBHOOK_SECRET&&process.env.ZOOM_MEETING_UUID),liveEnabled:process.env.LIVE_ACCESS_VERIFIED==='true',datasetVersion:DATASET_VERSION};
-let meeting=loadMeeting(), captureStatus='Ready';let active:AbortController|undefined;let replayTimer:ReturnType<typeof setInterval>|undefined;
+const health:Health={snowflakeConfigured:!!(process.env.SNOWFLAKE_ACCOUNT&&process.env.SNOWFLAKE_USER),cortexConfigured:!!(cliAvailable&&process.env.CORTEX_CONNECTION),zoomConfigured:!!(process.env.ZM_RTMS_CLIENT&&process.env.ZM_RTMS_SECRET&&process.env.ZOOM_WEBHOOK_SECRET&&process.env.ZOOM_MEETING_UUID),liveEnabled:process.env.LIVE_ACCESS_VERIFIED==='true',datasetVersion:DATASET_VERSION};
+let meeting=loadMeeting(), captureStatus='Complete setup, then connect Zoom.';let active:AbortController|undefined;
 const clients=new Set<express.Response>();
-function snapshot(){return {meeting,health,captureStatus,overview:localAnalysis({...basePlan,quarter:meeting.quarter}).summary};}
+function snapshot(){return {meeting,health,captureStatus};}
 function publish(){saveMeeting(meeting);const msg=`data: ${JSON.stringify(snapshot())}\n\n`;for(const c of clients)c.write(msg);}
-function stopCapture(){if(speech){clearTimeout(speech.timer);speech=undefined;}if(replayTimer)clearInterval(replayTimer);replayTimer=undefined;meeting.capture='idle';zoom.stop();captureStatus='Stopped';}
-function transcript(id:string,text:string,speaker:string,source:'zoom'|'replay'){
- if(meeting.endedAt||meeting.transcript.some(s=>s.id===id))return;
- meeting.transcript.push({id,text,speaker,timestamp:new Date().toISOString(),source});publish();
- if(/\bcoco\b/i.test(text))enqueue(text.replace(/^.*?\bcoco[,\s]*/i,''));
-}
+function stopCapture(){if(speech){clearTimeout(speech.timer);speech=undefined;}meeting.capture='idle';zoom.stop();captureStatus='Stopped';}
 let speech:{text:string;speaker:string;timer:ReturnType<typeof setTimeout>}|undefined;
 function flushSpeech(){if(!speech)return;const s=speech;clearTimeout(s.timer);speech=undefined;try{enqueue(s.text.replace(/^.*?\bcoco[,\s]*/i,''));}catch(e){captureStatus=(e as Error).message;publish();}}
 const zoom=createZoomAdapter((id,text,speaker)=>{
@@ -51,7 +44,7 @@ app.get('/api/events',(req,res)=>{res.setHeader('Content-Type','text/event-strea
 function enqueue(question:string,parentId?:string){
  if(meeting.endedAt)throw new Error('Start a new meeting before submitting questions.');
  if(meeting.answers.filter(a=>a.status==='queued'||a.status==='querying').length>=4)throw new Error('Investigation queue is full. Wait or cancel a question.');
- if(meeting.answers.length>=30)throw new Error('This demo is limited to 30 questions per meeting. Start a new meeting.');
+ if(meeting.answers.length>=30)throw new Error('This meeting is limited to 30 questions. Start a new meeting.');
  // Preserve analysis context only for a direct card follow-up or language that
  // clearly refers back to the preceding question. A new scoped question (for
  // example, “show overall gross margin”) must not inherit an old exclusion.
@@ -69,25 +62,22 @@ async function drain(){
  const deadline=setTimeout(()=>controller.abort(),45000);
  try{
   const parent=answer.parentId?meeting.answers.find(a=>a.id===answer.parentId)?.plan:undefined;
-  if(mode==='live'&&(!health.cortexConfigured||!health.snowflakeConfigured||!health.liveEnabled))throw new Error('Live mode is not configured. Run npm run doctor and complete docs/setup.md. No demo fallback was used.');
-  answer.plan=mode==='demo'?parseDemoQuestion(answer.question,parent,meeting.quarter,meeting.topic):await interpretLive(answer.question,parent,meeting.quarter,meeting.topic,controller.signal);
+  if(!health.cortexConfigured||!health.snowflakeConfigured||!health.liveEnabled)throw new Error('Live setup is incomplete. Run npm run doctor and complete docs/setup.md.');
+  answer.plan=await interpretLive(answer.question,parent,meeting.quarter,meeting.topic,controller.signal);
   controller.signal.throwIfAborted();
   if(answer.plan.clarification){answer.status='needs_clarification';answer.headline=answer.plan.clarification;}
   else {
-   const result=mode==='demo'?localAnalysis(answer.plan):await liveAnalysis(answer.plan,controller.signal);
+   const result=await liveAnalysis(answer.plan,controller.signal);
    controller.signal.throwIfAborted();answer.evidence=result.evidence;answer.summary=result.summary;answer.excludedCustomer=result.excludedCustomer;
    answer.headline=headline(answer.plan,result.summary);answer.interpretation=interpretation(answer.plan,result.excludedCustomer);answer.status='answered';
   }
- }catch(error){if(controller.signal.aborted){answer.status='cancelled';answer.error='Investigation stopped or reached its deadline.';}else{answer.status='failed';answer.error=mode==='demo'?(error as Error).message:'Live analysis failed. Check local configuration and server diagnostics; no synthetic fallback was used.';console.error('[analysis]',error instanceof Error?error.name:'error');}}
+ }catch(error){if(controller.signal.aborted){answer.status='cancelled';answer.error='Investigation stopped or reached its deadline.';}else{answer.status='failed';answer.error=(error as Error).message||'Live analysis failed. Check local configuration and server diagnostics.';console.error('[analysis]',error instanceof Error?error.name:'error');}}
  finally{clearTimeout(deadline);active=undefined;publish();void drain();}
 }
 app.post('/api/questions',(req,res)=>{const b=z.object({question:z.string().trim().min(3).max(1000),parentId:z.string().optional()}).parse(req.body);res.json(enqueue(b.question,b.parentId));});
 app.post('/api/answers/:id/cancel',(req,res)=>{const a=meeting.answers.find(x=>x.id===req.params.id);if(!a)return res.sendStatus(404);if(a.status==='querying')active?.abort();if(['queued','querying'].includes(a.status))a.status='cancelled';publish();res.json({ok:true});});
 app.post('/api/answers/:id/pin',(req,res)=>{const a=meeting.answers.find(x=>x.id===req.params.id);if(!a)return res.sendStatus(404);a.pinned=!a.pinned;publish();res.json({ok:true});});
 app.post('/api/meeting/context',(req,res)=>{const b=z.object({topic:z.enum(['revenue','margin']).optional(),notes:z.string().max(20000).optional()}).parse(req.body);Object.assign(meeting,b);publish();res.json({ok:true});});
-app.post('/api/capture/replay',(_req,res)=>{if(meeting.endedAt)return res.status(409).json({error:'Start a new meeting first.'});stopCapture();meeting.capture='replay';captureStatus='Replaying sample QBR';let i=0;const run=randomUUID();
- const tick=()=>{if(i>=replay.length){if(replayTimer)clearInterval(replayTimer);replayTimer=undefined;meeting.capture='idle';captureStatus='Replay complete';publish();return;}const s=replay[i++];try{transcript(`${run}-${i}`,s.text,s.speaker,'replay');}catch(e){captureStatus=(e as Error).message;publish();}};
- tick();replayTimer=setInterval(tick,4500);publish();res.json({ok:true});});
 app.post('/api/capture/zoom',(_req,res)=>{if(!health.zoomConfigured)return res.status(409).json({error:'Zoom credentials and meeting UUID are missing. See docs/setup.md.'});if(meeting.endedAt)return res.status(409).json({error:'Start a new meeting first.'});stopCapture();meeting.capture='zoom';captureStatus='Armed. Start RTMS in your Zoom meeting.';publish();res.json({ok:true});});
 app.post('/api/capture/stop',(_req,res)=>{stopCapture();publish();res.json({ok:true});});
 app.post('/api/meeting/end',(_req,res)=>{stopCapture();active?.abort();for(const a of meeting.answers)if(a.status==='queued')a.status='cancelled';meeting.endedAt=new Date().toISOString();publish();res.json({ok:true});});
@@ -101,6 +91,6 @@ if(process.env.NODE_ENV==='production'){
 }else{
  const {createServer:createViteServer}=await import('vite');const vite=await createViteServer({server:{middlewareMode:true},appType:'spa'});app.use(vite.middlewares);
 }
-const server=createServer(app);server.listen(port,'127.0.0.1',()=>console.log(`CoCo Meeting Analyst: http://localhost:${port} · ${mode.toUpperCase()} mode`));
+const server=createServer(app);server.listen(port,'127.0.0.1',()=>console.log(`CoCo Meeting Analyst: http://localhost:${port} · live setup required`));
 function shutdown(){stopCapture();active?.abort();saveMeeting(meeting);server.close();process.exit(0);}
 process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);

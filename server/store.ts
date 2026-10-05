@@ -15,7 +15,7 @@ export function loadMeeting():Meeting {
 export function saveMeeting(meeting:Meeting){db.prepare('INSERT INTO meetings(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(meeting.id,JSON.stringify(meeting));}
 export function deleteMeeting(id:string){db.prepare('DELETE FROM meetings WHERE id=?').run(id);}
 export function recap(meeting:Meeting) {
- const findings=meeting.answers.filter(a=>a.status==='answered'&&a.pinned).map(a=>`- ${a.headline}\n  - ${a.interpretation}\n  - Evidence: ${a.evidence.map(e=>e.queryId??'local synthetic calculation (not Snowflake)').join(', ')}`).join('\n');
+ const findings=meeting.answers.filter(a=>a.status==='answered'&&a.pinned).map(a=>`- ${a.headline}\n  - ${a.interpretation}\n  - Evidence: ${a.evidence.map(e=>e.queryId??'No Snowflake query ID recorded').join(', ')}`).join('\n');
  const unresolved=meeting.answers.filter(a=>['needs_clarification','failed'].includes(a.status)).map(a=>`- ${a.question}: ${a.error??a.headline}`).join('\n');
- return `# ${meeting.title}\n\n${meeting.quarter} · Meridian Cloud · Synthetic demonstration\n\n## Pinned analytical findings\n\n${findings||'No findings pinned.'}\n\n## Notes and follow-ups\n\n${meeting.notes||'No notes added. Owners and due dates are not inferred.'}\n\n## Open questions\n\n${unresolved||'None.'}\n\n## Discussion transcript\n\n${meeting.transcript.map(s=>`- **${s.speaker}:** ${s.text}`).join('\n')}\n`;
+ return `# ${meeting.title}\n\n${meeting.quarter} · Live meeting analysis\n\n## Pinned analytical findings\n\n${findings||'No findings pinned.'}\n\n## Notes and follow-ups\n\n${meeting.notes||'No notes added. Owners and due dates are not inferred.'}\n\n## Open questions\n\n${unresolved||'None.'}\n\n## Discussion transcript\n\n${meeting.transcript.map(s=>`- **${s.speaker}:** ${s.text}`).join('\n')}\n`;
 }

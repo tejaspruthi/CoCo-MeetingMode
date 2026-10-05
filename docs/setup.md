@@ -1,6 +1,6 @@
 # Live-service setup
 
-The app runs in safe local demo mode by default. It uses a synthetic data generator and labels every answer as a local calculation. It does not call Snowflake, CoCo, or Zoom until you configure each service.
+The app is live-only. It does not answer questions until CoCo, Snowflake, and Zoom are configured, and it never falls back to local or fictional calculations.
 
 ## 1. Install and configure CoCo
 
@@ -16,7 +16,7 @@ npm run doctor
 
 It should report that the CLI and named connection are available. It deliberately never prints credentials.
 
-## 2. Create the isolated Snowflake demo data
+## 2. Create an optional isolated Snowflake sample environment
 
 Copy `.env.example` to `.env` and set the Snowflake account, user, and provisioning role details for this one command. The provisioning identity needs permission to create the demo database, warehouse, role, table, and semantic view.
 
@@ -36,14 +36,13 @@ The command applies `sql/01-bootstrap.sql`, `data/load.sql`, and `sql/02-semanti
 
 After provisioning, explicitly assign `COCO_QBR_READER` to the user or service identity that will run the application. Set `SNOWFLAKE_ROLE=COCO_QBR_READER` and restore the runtime warehouse configuration. Do not grant a broad administrative role to the app.
 
-Before enabling live mode, manually run the generated golden queries from `fixtures/expected.json` and verify the semantic view returns matching results. Then change both settings in `.env`:
+Before enabling live access, manually run the generated golden queries from `fixtures/expected.json` and verify the semantic view returns matching results. Then set:
 
 ```ini
-ANALYSIS_MODE=live
 LIVE_ACCESS_VERIFIED=true
 ```
 
-Restart the application. Live mode fails closed: it will never show local synthetic results in place of a failed Snowflake query.
+Restart the application. It fails closed: it will never show local synthetic results in place of a failed Snowflake query.
 
 ## 3. Connect Zoom RTMS
 
@@ -66,4 +65,4 @@ npm run typecheck
 npm run build
 ```
 
-Visit `http://localhost:4310`. Use **Play sample meeting** for the self-contained demonstration. A real meeting requires all three live configuration stages above.
+Visit `http://localhost:4310`. The application displays its connection checklist until all live prerequisites are complete. A real meeting requires all three stages above.
